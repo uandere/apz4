@@ -1,0 +1,19 @@
+[package]
+name = "facade-service"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rocket = { version = "0.5.0", features = ["json", "serde_json", "uuid"] }
+serde = { version = "1.0.196", features = ["derive"] }
+reqwest = { version = "0.11.24", features = ["json", "rustls"], default-features = false }
+uuid = { version = "1.7.0", features = ["v4"] }
+lazy_static = "1.4.0"
+rand = "0.8.5"
+serde_json = "1.0.114"
+log = "0.4.21"
+rdkafka = { version = "0.36.2", features = ["default"] }
+tokio = "1.37.0"
+thiserror = "1.0.59"

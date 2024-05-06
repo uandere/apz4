@@ -1,0 +1,14 @@
+[package]
+name = "logging-service"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rocket = { version = "0.5.0", features = ["json", "serde_json", "uuid"] }
+serde = { version = "1.0.196", features = ["derive"] }
+lazy_static = "1.4.0"
+redis = { version = "0.25.0" , features = ["cluster", "cluster-async", "aio", "tokio-comp"] }
+log = "0.4.21"
+env_logger = "0.11.3"

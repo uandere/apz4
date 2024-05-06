@@ -1,0 +1,173 @@
+services:
+  redis-cluster-node-0:
+    image: redis:6.0-alpine
+    command: redis-server /usr/local/etc/redis/redis.conf
+    ports:
+      - "9079:6379"
+    volumes:
+      - ${PWD}/path/redis_conf_folder:/usr/local/etc/redis
+
+  redis-cluster-node-1:
+    image: redis:6.0-alpine
+    command: redis-server /usr/local/etc/redis/redis.conf
+    ports:
+      - "9080:6379"
+    volumes:
+      - ${PWD}/path/redis_conf_folder:/usr/local/etc/redis
+
+  redis-cluster-node-2:
+    image: redis:6.0-alpine
+    command: redis-server /usr/local/etc/redis/redis.conf
+    ports:
+      - "9081:6379"
+    volumes:
+      - ${PWD}/path/redis_conf_folder:/usr/local/etc/redis
+
+  redis-cluster-node-3:
+    image: redis:6.0-alpine
+    command: redis-server /usr/local/etc/redis/redis.conf
+    ports:
+      - "9082:6379"
+    volumes:
+      - ${PWD}/path/redis_conf_folder:/usr/local/etc/redis
+
+  redis-cluster-node-4:
+    image: redis:6.0-alpine
+    command: redis-server /usr/local/etc/redis/redis.conf
+    ports:
+      - "9083:6379"
+    volumes:
+      - ${PWD}/path/redis_conf_folder:/usr/local/etc/redis
+
+  redis-cluster-node-5:
+    image: redis:6.0-alpine
+    command: redis-server /usr/local/etc/redis/redis.conf
+    ports:
+      - "9084:6379"
+    volumes:
+      - ${PWD}/path/redis_conf_folder:/usr/local/etc/redis
+
+  redis-cluster-configure:
+    image: redis:6.0-alpine
+    command: sh /usr/local/etc/redis/redis-cluster-create.sh
+    depends_on:
+      - redis-cluster-node-0
+      - redis-cluster-node-1
+      - redis-cluster-node-2
+    volumes:
+      - ${PWD}/path/redis_conf_folder:/usr/local/etc/redis
+
+  facade-service:
+    depends_on:
+      - zookeeper
+      - kafka
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: facade-service
+    ports:
+      - "8000:8000"
+    environment:
+      - ROCKET_ADDRESS=0.0.0.0
+
+  logging-service-1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: logging-service
+    ports:
+      - "8001:8001"
+    environment:
+      - ROCKET_PORT=8001
+      - ROCKET_ADDRESS=0.0.0.0
+      - REDIS_URL0=redis://redis-cluster-node-0:6379
+      - REDIS_URL1=redis://redis-cluster-node-1:6379
+      - REDIS_URL2=redis://redis-cluster-node-2:6379
+      - RUST_LOG=info
+    depends_on:
+      - redis-cluster-configure
+
+  logging-service-2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: logging-service
+    ports:
+      - "8002:8001"
+    environment:
+      - ROCKET_PORT=8001
+      - ROCKET_ADDRESS=0.0.0.0
+      - REDIS_URL0=redis://redis-cluster-node-0:6379
+      - REDIS_URL1=redis://redis-cluster-node-1:6379
+      - REDIS_URL2=redis://redis-cluster-node-2:6379
+      - RUST_LOG=info
+    depends_on:
+      - redis-cluster-configure
+  
+  logging-service-3:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: logging-service
+    ports:
+      - "8003:8001"
+    environment:
+      - ROCKET_PORT=8001
+      - ROCKET_ADDRESS=0.0.0.0
+      - REDIS_URL0=redis://redis-cluster-node-0:6379
+      - REDIS_URL1=redis://redis-cluster-node-1:6379
+      - REDIS_URL2=redis://redis-cluster-node-2:6379
+      - RUST_LOG=info
+    depends_on:
+      - redis-cluster-configure
+  
+  messages-service-1:
+    depends_on:
+      - zookeeper
+      - kafka
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: messages-service
+    ports:
+      - "8004:8002"
+    environment:
+      - ROCKET_ADDRESS=0.0.0.0
+      - ROCKET_PORT=8002
+
+  messages-service-2:
+    depends_on:
+      - zookeeper
+      - kafka
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: messages-service
+    ports:
+      - "8005:8002"
+    environment:
+      - ROCKET_ADDRESS=0.0.0.0
+      - ROCKET_PORT=8002
+
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+    volumes:
+      - ./kafka/start-kafka.sh:/usr/local/bin/start-kafka.sh
+    command: [ "bash", "/usr/local/bin/start-kafka.sh" ]
